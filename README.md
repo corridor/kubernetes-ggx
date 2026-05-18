@@ -69,6 +69,23 @@ Feel free to configure the kubernetes setup based on your needs. Some common con
 - Configure other nginx configs like gzip/timeout etc. in `base/ingress.yaml`
 - Change Memory requests and limits in the respective `base/*.yaml` files for that service.
 
+## Recommended Cluster Configuration
+
+The following configuration is a good starting point for managed Kubernetes clusters.
+
+| Provider | Cluster type | Region / Zone | Initial nodes | Autoscaling | Node size | Disk | Notes |
+|---|---|---|---|---|---|---|---|
+| GKE | Standard | zonal (e.g. `us-central1-f`) | 1 | min 1, max 3 | `e2-standard-8` | 100 GB | Enable IP aliasing; use approved infra VPC/subnet |
+| EKS | Standard | one availability zone or multi-AZ | 1 | min 1, max 3 | `m5.xlarge` or similar | 100 GB | Attach to approved VPC/subnet; use AWS VPC CNI or Cilium |
+| AKS | Standard | one region | 1 | min 1, max 3 | `Standard_D8s_v3` | 100 GB | Use Azure CNI and approved virtual network |
+
+### Why this configuration
+
+- A single node is sufficient for typical POC usage.
+- A maximum of 3 nodes gives headroom for blue/green-style upgrades or temporary capacity spikes.
+- A 100 GB node disk supports application storage needs.
+- Choose a machine type with 8 vCPUs and around 32 GB RAM for balanced performance.
+
 ## FAQs
 
 **My pod is showing `ImagePullBackOff`**
