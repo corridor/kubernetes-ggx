@@ -3,9 +3,7 @@ import os
 import pathlib
 
 
-SQLALCHEMY_DATABASE_URI = (
-    "postgresql://user:password@postgres.example.internal:5432/genguardx"
-)
+SQLALCHEMY_DATABASE_URI = "postgresql://user:password@postgres-service:5432/genguardx"
 OUTPUT_DATA_LOCATION = str(
     pathlib.Path(os.environ["CORRIDOR_HOME"]) / "data/results/{}.parquet"
 )

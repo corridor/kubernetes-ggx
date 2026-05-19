@@ -2,5 +2,6 @@ resources:
   - app-deployment.yaml
   - worker-deployment.yaml
   - jupyter-deployment.yaml
+  - postgres-deployment.yaml
   - pvc.yaml
   - ingress.yaml
