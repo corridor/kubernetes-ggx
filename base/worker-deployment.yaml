@@ -1,4 +1,8 @@
-# Background worker workload.
+# The kernel worker: a Jupyter server (`corridor-worker run`, port 5001) that runs all the Python code of the platform.
+# The app asks it for kernels, and the kernels are closed after 15 minutes idle. Every kernel is a process of
+# this pod, so its memory holds them all: at most KERNEL_MAX_PROCESSES (default 4) at a time, set in api_config.py.
+# The worker and the app share the kernels volume (the Python environments of the kernels) and the data and uploads
+# volumes (the files that jobs read and write).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,10 +40,10 @@ spec:
               source venv/bin/activate
               exec venv/bin/corridor-worker run
           env:
-            - name: WORKER_READINESS_PROBE_FILE
-              value: /tmp/celery_ready
             - name: CORRIDOR_API_URL
               value: http://corridor-app-service:5002
+          ports:
+            - containerPort: 5001
           volumeMounts:
             - name: config-volume
               mountPath: /opt/corridor/config
@@ -57,11 +61,8 @@ spec:
             limits:
               memory: "10Gi"
           readinessProbe:
-            exec:
-              command:
-                - test
-                - -f
-                - /tmp/celery_ready
+            tcpSocket:
+              port: 5001
             initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 5
@@ -82,3 +83,15 @@ spec:
         - name: kernels-volume
           persistentVolumeClaim:
             claimName: kernels-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: corridor-worker-service
+spec:
+  type: ClusterIP
+  selector:
+    app: corridor-worker
+  ports:
+    - port: 5001
+      targetPort: 5001
