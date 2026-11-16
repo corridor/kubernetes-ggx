@@ -57,3 +57,17 @@ spec:
   resources:
     requests:
       storage: 5Gi
+---
+# Python environments of the kernels (one per set of project Python packages), their package cache, and the files of
+# the kernel worker. Mounted by app (writes the environments) and worker (runs the kernels from them): both at the same path
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kernels-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: shared-rwx
+  resources:
+    requests:
+      storage: 20Gi
