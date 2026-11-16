@@ -36,7 +36,8 @@ The deployment architecture is based on the existing Corridor GenGuardX setup:
 - `corridor-worker`: The kernel worker, a Jupyter server that runs all Python code (simulations, jobs, chats, figures)
   in IPython kernels; each simulation or job gets a kernel of its own, deleted when it ends
 - `corridor-jupyter`: Jupyter/JupyterHub-facing service for ad-hoc analytics
-- Shared persistent volumes for data, uploads, notebooks, Jupyter state, and backups
+- Shared persistent volumes for job results, uploads, the database and its backups, Jupyter state, notebooks, and the Python environments of the kernels
+  (see [Storage](#storage))
 - A single ingress routing `/` to the app and `/jupyter` to jupyter-service
 
 ## Cloud Compatibility
@@ -86,6 +87,30 @@ UID 1001) write:
 - With Azure Files, the default mount options of the `azurefile` storage classes (`0777`) work as they are.
 - With `root_squash` on the NFS server, root in a pod cannot write the share: do not rely on an init step running as
   root to fix the permissions.
+
+## Storage
+
+The platform keeps its state on six ReadWriteMany volumes (`base/pvc.yaml`). The storage class must support file
+locks.
+
+The default sizes fit about **20 moderately active users** for the first two years. The yearly growth is a rough
+estimate for the same 20 users: watch the actual use after the first months and resize before a volume fills.
+
+| Volume | Holds | Mounted by | Default size | Expected growth per year |
+|---|---|---|---|---|
+| `data-pvc` | Results of jobs (simulations, pipelines, annotation queues) | app, worker, jupyter | 500Gi | ~250Gi |
+| `uploads-pvc` | User uploaded files and the working files of jobs | app, worker, jupyter | 200Gi | ~100Gi |
+| `databases-pvc` | The PostgreSQL database and its backups | app, worker, postgres | 50Gi | ~20G |
+| `jupyter-pvc` | JupyterHub's own state | jupyter | 5Gi | 0 (does not grow) |
+| `notebooks-pvc` | Each Jupyter user's notebooks and files | jupyter | 50Gi | ~25Gi |
+| `kernels-pvc` | Python environments of the kernels that run code, their package cache, and the kernel worker's files | app, worker | 20Gi | ~10Gi |
+
+- A backup of the database is added before each database upgrade.
+- With an external database, `databases-pvc` only holds the backups and can be much smaller.
+- Unused kernel environments are removed after 14 days and rebuilt when needed; losing `kernels` only makes the
+  next runs slower while they are rebuilt.
+- Losing `data`, `uploads`, `databases`, `jupyter`, or `notebooks` loses work: back them up.
+- Logs go to stdout/stderr for standard log collection
 
 ## Kernel worker
 

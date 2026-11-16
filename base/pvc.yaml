@@ -1,3 +1,9 @@
+# Shared volumes of GenGuardX, mounted under /opt/corridor. They are ReadWriteMany because several pods use them at
+# once, and the storage must support file locks. The pods run as UID 1001 in group 0: group 0 must be able to write.
+#
+# Sizes fit about 20 moderately active users; see "Storage" in README.md for the expected growth.
+
+# Results of jobs (simulations, pipelines, annotation queues). Mounted by app, worker, jupyter. ~250Gi per year.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -10,6 +16,7 @@ spec:
     requests:
       storage: 500Gi
 ---
+# User uploaded files and the working files of jobs. Mounted by app, worker, jupyter. ~100Gi per year.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -20,8 +27,10 @@ spec:
   storageClassName: shared-rwx
   resources:
     requests:
-      storage: 100Gi
+      storage: 200Gi
 ---
+# The PostgreSQL database and its backups (one before each database upgrade) and used for automatic rollback.
+# Mounted by app, worker.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -32,8 +41,9 @@ spec:
   storageClassName: shared-rwx
   resources:
     requests:
-      storage: 1Gi
+      storage: 50Gi
 ---
+# JupyterHub's own state (logins). Mounted by jupyter. Does not grow (0 per year).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -46,6 +56,7 @@ spec:
     requests:
       storage: 5Gi
 ---
+# Each Jupyter user's notebooks and files. Mounted by jupyter. ~25Gi per year.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -56,7 +67,7 @@ spec:
   storageClassName: shared-rwx
   resources:
     requests:
-      storage: 5Gi
+      storage: 50Gi
 ---
 # Python environments of the kernels (one per set of project Python packages), their package cache, and the files of
 # the kernel worker. Mounted by app (writes the environments) and worker (runs the kernels from them): both at the same path
