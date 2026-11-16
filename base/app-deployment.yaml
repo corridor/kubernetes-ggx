@@ -17,25 +17,6 @@ spec:
     spec:
       imagePullSecrets:
         - name: registry-secret
-      initContainers:
-        - name: init-corridor-app
-          image: corridor-image
-          imagePullPolicy: Always
-          command: ["/bin/bash", "-ec"]
-          args:
-            - |
-              echo "Starting database upgrade..."
-              /opt/corridor/venv/bin/corridor-api db upgrade
-              mv /opt/corridor/corridor*.db* /opt/corridor/databases/ || true
-          volumeMounts:
-            - name: config-volume
-              mountPath: /opt/corridor/config
-            - name: data-volume
-              mountPath: /opt/corridor/data
-            - name: uploads-volume
-              mountPath: /opt/corridor/uploads
-            - name: databases-volume
-              mountPath: /opt/corridor/databases
       containers:
         - name: corridor-app
           image: corridor-image
