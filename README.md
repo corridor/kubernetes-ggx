@@ -69,6 +69,23 @@ Feel free to configure the kubernetes setup based on your needs. Some common con
 - Configure other nginx configs like gzip/timeout etc. in `base/ingress.yaml`
 - Change Memory requests and limits in the respective `base/*.yaml` files for that service.
 
+## User and group
+
+The image runs as **UID 1001** in **group 0 (GID 0)**, as Red Hat images do, never as root. The `corridor-app`,
+`corridor-worker` and `corridor-jupyter` deployments set this in their `securityContext` (`runAsUser: 1001`,
+`runAsGroup: 0`, `fsGroup: 0`). Platforms that start containers with an arbitrary UID (OpenShift) still start them in
+group 0, so the image works there too.
+
+What the platform writes belongs to group 0, which may write it as the owner does. The storage must let group 0 (or
+UID 1001) write:
+
+- Kubernetes applies `fsGroup` to most block volumes, but not to NFS. On an NFS share, make the export writable by
+  group 0, or by UID 1001: for example `chown -R 1001:0 <export> && chmod -R g=u <export>`. The
+  `nfs-subdir-external-provisioner` (see `GCP.md`) creates world-writable folders, which work as they are.
+- With Azure Files, the default mount options of the `azurefile` storage classes (`0777`) work as they are.
+- With `root_squash` on the NFS server, root in a pod cannot write the share: do not rely on an init step running as
+  root to fix the permissions.
+
 ## Recommended Cluster Configuration
 
 The following configuration is a good starting point for managed Kubernetes clusters.
