@@ -33,7 +33,8 @@ kubectl get ingress -n ggx
 The deployment architecture is based on the existing Corridor GenGuardX setup:
 
 - `corridor-app`: Primary API and Web application which serves the GGX platform
-- `corridor-worker`: Background worker process for heavy execution tasks
+- `corridor-worker`: The kernel worker, a Jupyter server that runs all Python code (simulations, jobs, chats, figures)
+  in IPython kernels; each simulation or job gets a kernel of its own, deleted when it ends
 - `corridor-jupyter`: Jupyter/JupyterHub-facing service for ad-hoc analytics
 - Shared persistent volumes for data, uploads, notebooks, Jupyter state, and backups
 - A single ingress routing `/` to the app and `/jupyter` to jupyter-service
@@ -85,6 +86,19 @@ UID 1001) write:
 - With Azure Files, the default mount options of the `azurefile` storage classes (`0777`) work as they are.
 - With `root_squash` on the NFS server, root in a pod cannot write the share: do not rely on an init step running as
   root to fix the permissions.
+
+## Kernel worker
+
+All Python code of the platform runs in IPython kernels owned by the kernel worker (`corridor-worker`, port 5001). The
+app finds it at `CORRIDOR_KERNEL_WORKER_URL` (`http://corridor-worker-service:5001`) and asks it for kernels:
+
+- Each simulation or job gets a kernel of its own, which is deleted when the job ends.
+- Chats, figures, data previews and Debug Code use kernels that are reused, and closed after 15 minutes idle.
+- At most `KERNEL_MAX_PROCESSES` kernels run at a time (default 4), of which `KERNEL_MAX_JOB_PROCESSES` (default 2) run
+  jobs; more jobs wait in a queue. Set them in `api_config.py`.
+
+Every kernel is a process of the worker pod, so size its memory limit (`base/worker-deployment.yaml`) for the kernels
+that run at once. For larger deployments, use the kernel gateway to spawn up separate pods for each kernel worker
 
 ## Recommended Cluster Configuration
 

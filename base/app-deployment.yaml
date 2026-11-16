@@ -35,6 +35,10 @@ spec:
               cd /opt/corridor
               source venv/bin/activate
               exec venv/bin/corridor-api run
+          env:
+            # Where the app finds the kernel worker that runs the code (base/worker-deployment.yaml)
+            - name: CORRIDOR_KERNEL_WORKER_URL
+              value: http://corridor-worker-service:5001
           ports:
             - containerPort: 5002
           volumeMounts:
