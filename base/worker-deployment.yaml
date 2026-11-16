@@ -40,6 +40,9 @@ spec:
               source venv/bin/activate
               exec venv/bin/corridor-worker run
           env:
+            # Listen on the pod's address (the default is 127.0.0.1), for the service and the readiness probe
+            - name: CORRIDOR_KERNEL_WORKER_HOST
+              value: 0.0.0.0
             - name: CORRIDOR_API_URL
               value: http://corridor-app-service:5002
           ports:
