@@ -49,6 +49,8 @@ spec:
               mountPath: /opt/corridor/uploads
             - name: databases-volume
               mountPath: /opt/corridor/databases
+            - name: kernels-volume
+              mountPath: /opt/corridor/kernels
           resources:
             requests:
               memory: "4Gi"
@@ -77,3 +79,6 @@ spec:
         - name: databases-volume
           persistentVolumeClaim:
             claimName: databases-pvc
+        - name: kernels-volume
+          persistentVolumeClaim:
+            claimName: kernels-pvc
