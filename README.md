@@ -94,7 +94,8 @@ If your pod events show `ImagePullBackOff` or registry authorization errors -> T
 image authentication is likely the culprit. Double check if the correct docker credentials
 are added to the kubernetes secret
 
-**App is taking a long time to start**
+**The app asks to upgrade the database**
 
-The app deployment runs a database migration in an init container before the main API starts.
-This can be decoupled to reduce restart time.
+The deployment does not upgrade the database when it starts. After a new image is deployed,
+open the app: when the database schema is out of date, it asks to upgrade the database.
+Start the upgrade there and wait for it to finish before you use the platform.
